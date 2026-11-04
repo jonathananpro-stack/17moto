@@ -78,6 +78,7 @@ body.touch #cap{bottom:calc(env(safe-area-inset-bottom,0px) + 170px);z-index:3}
     <button id="b-boat">3 Thuyền</button>
     <button id="b-dog">4 Chó robot</button>
     <button id="b-human">5 Người máy</button>
+    <button id="b-elephant">6 Voi con</button>
   </div>
   <div id="st"></div>
   <label>Gió: <span id="wv">4</span> m/s <input id="wind" type="range" min="0" max="15" step="0.5" value="4"></label>
@@ -87,22 +88,24 @@ body.touch #cap{bottom:calc(env(safe-area-inset-bottom,0px) + 170px);z-index:3}
   <label>Phơi sáng: <span id="ev">1.2</span> <input id="exp" type="range" min="0.6" max="2" step="0.05" value="1.2"></label>
   <div class="row" style="margin-top:8px"><button id="b-music">♪ Nhạc: BẬT</button><button id="b-bark">🐕 Sủa (B)</button></div>
   <div class="row" style="margin-top:8px"><button data-act="wave">👋 Vẫy tay</button><button data-act="jump">⬆ Nhảy</button><button data-act="flip">🤸 Nhào lộn</button><button data-act="grasp">✋ Cầm</button><button data-act="release">Thả</button><button data-act="tai">☯ Múa thái cực</button><button data-act="teach">🎓 Dạy thái cực</button><button data-act="stop">■ Dừng</button></div>
+  <div class="row" style="margin-top:8px"><button data-act="drink">💧 Voi uống nước (U)</button><button data-act="spray">💦 Voi phun nước (Space)</button></div>
   <div class="row" style="margin-top:8px"><button id="b-live">📺 Chế độ Live (L): TẮT</button><button id="b-livetest">🧪 Thử sự kiện live</button></div>
   <div class="row" style="margin-top:8px"><button id="b-touch">🎮 Cảm ứng: TẮT</button></div>
   <div class="row" style="margin-top:8px"><button id="b-hover" class="on">H Drone tự giữ độ cao: BẬT</button></div>
-  <div id="help">WASD / mũi tên: điều khiển · Space / Shift: lên / xuống (drone) · Kéo chuột: xoay camera · Cuộn: zoom · Cảm ứng: vuốt xoay, chụm hai ngón để phóng to/thu nhỏ</div>
+  <div id="help">WASD / mũi tên: điều khiển · Space / Shift: lên / xuống (drone) · Voi: U uống nước, Space phun nước · Kéo chuột: xoay camera · Cuộn: zoom · Cảm ứng: vuốt xoay, chụm hai ngón để phóng to/thu nhỏ</div>
 </div>
 <div id="pip" class="closed"><div id="pipbar"><span id="pipl"></span><button id="pipsz" title="Đổi cỡ">⤢</button><button id="piptog" title="Mở/đóng camera (phím C)">▸</button></div><div id="screen"></div></div>
 <div id="cap"></div>
 <div id="chat"><input id="chin" placeholder="Nói chuyện với robot người… (Enter)" autocomplete="off"><button id="chmic" title="Nói bằng micro">🎤</button><button id="chsend">Gửi</button></div>
 <div id="tui">
-  <div id="tdev"><button data-v="rover" class="on" title="Robot bánh xe">🚙</button><button data-v="dog" title="Chó robot">🐕</button><button data-v="boat" title="Thuyền">⛵</button><button data-v="drone" title="Flycam">🛸</button><button data-v="human" title="Robot người">🤖</button></div>
+  <div id="tdev"><button data-v="rover" class="on" title="Robot bánh xe">🚙</button><button data-v="dog" title="Chó robot">🐕</button><button data-v="elephant" title="Voi con">🐘</button><button data-v="boat" title="Thuyền">⛵</button><button data-v="drone" title="Flycam">🛸</button><button data-v="human" title="Robot người">🤖</button></div>
   <div id="ttools"><button id="t-menu" title="Menu">☰</button><button id="t-chat" title="Nói chuyện">💬</button><button id="t-cam" title="Camera điện thoại">📷</button><button id="t-reset" title="Đặt lại góc nhìn">🎯</button></div>
   <div id="tjoy"><div id="tknob"></div></div>
   <div id="tzoom"><button id="z-out" title="Thu nhỏ">−</button><button id="z-in" title="Phóng to">+</button></div>
   <div id="tbtn">
     <button data-vv="drone" id="t-up">▲</button><button data-vv="drone" id="t-dn">▼</button>
     <button data-vv="dog" id="t-bark">🔊</button>
+    <button data-vv="elephant" data-act="drink">💧</button><button data-vv="elephant" data-act="spray">💦</button>
     <button data-vv="human" data-act="wave">👋</button><button data-vv="human" data-act="jump">⬆</button><button data-vv="human" data-act="flip">🤸</button><button data-vv="human" data-act="grasp">✋</button><button data-vv="human" data-act="release">⏏</button><button data-vv="human" data-act="tai">☯</button><button data-vv="human" data-act="teach">🎓</button><button data-vv="human" data-act="stop">■</button>
   </div>
 </div>
@@ -446,7 +449,72 @@ function ik(dz,dy){
   const cl = v => Math.max(-1,Math.min(1,v));
   return [a - Math.acos(cl((L1*L1+d*d-L2*L2)/(2*L1*d))), a + Math.acos(cl((L2*L2+d*d-L1*L1)/(2*L2*d)))];
 }
-scene.add(rover,drone,boat,dog);
+// ---- Voi con: 4 chân, tai vẫy, vòi 9 khớp biết uống nước và phun nước ----
+const ele = new T.Group(), EL = {legs:[],trunk:[],ears:[],tip:null,head:null,tail:null,trunkBase:null};
+{
+  const skin=new T.MeshLambertMaterial({color:0x9b9ba6}), skin2=new T.MeshLambertMaterial({color:0x8d8d98,side:T.DoubleSide}),
+        pink=new T.MeshLambertMaterial({color:0xd9a5ad,side:T.DoubleSide}), toe=new T.MeshLambertMaterial({color:0xe4ddcf}),
+        black=new T.MeshLambertMaterial({color:0x111111}), ivory=new T.MeshLambertMaterial({color:0xf3eee0});
+  const body=new T.Mesh(new T.SphereGeometry(.5,22,16),skin); body.scale.set(1,.86,1.25); ele.add(body);
+  const head=new T.Group(); head.position.set(0,.24,.6); ele.add(head); EL.head=head;
+  const hm=new T.Mesh(new T.SphereGeometry(.36,22,16),skin); hm.scale.set(1,.96,.94); head.add(hm);
+  for (const s of [1,-1]){
+    const eye=new T.Mesh(new T.SphereGeometry(.042,10,8),black); eye.position.set(s*.2,.08,.26); head.add(eye);
+    const hl=new T.Mesh(new T.SphereGeometry(.013,6,5),new T.MeshBasicMaterial({color:0xffffff})); hl.position.set(s*.207,.1,.295); head.add(hl);
+    const ear=new T.Group(); ear.position.set(s*.27,.06,-.04); head.add(ear);
+    const eo=new T.Mesh(new T.CircleGeometry(.34,24),skin2); eo.rotation.y=s*Math.PI/2; eo.position.set(s*.02,-.04,-.16); eo.scale.set(1,1.15,1); ear.add(eo);
+    const ei=new T.Mesh(new T.CircleGeometry(.24,20),pink); ei.rotation.y=s*Math.PI/2; ei.position.set(s*.03,-.06,-.15); ei.scale.set(1,1.1,1); ear.add(ei);
+    EL.ears.push({g:ear,s});
+    const tusk=new T.Mesh(new T.ConeGeometry(.03,.14,8),ivory); tusk.position.set(s*.12,-.2,.27); tusk.rotation.x=Math.PI*.62; head.add(tusk);
+  }
+  const TN=9, TL=.085, base=new T.Group(); base.position.set(0,-.1,.3); head.add(base); EL.trunkBase=base;
+  for (let i=0;i<TN;i++){
+    const j = i===0 ? base : new T.Group(); if (i>0){ j.position.y=-TL; EL.trunk[i-1].add(j); }
+    const g=new T.CylinderGeometry(.105-i*.0065,.105-(i+1)*.0065,TL*1.1,12); g.translate(0,-TL/2,0); j.add(new T.Mesh(g,skin)); EL.trunk.push(j);
+  }
+  const tip=new T.Object3D(); tip.position.y=-TL; EL.trunk[TN-1].add(tip); EL.tip=tip;
+  const nose=new T.Mesh(new T.CircleGeometry(.045,12),black); nose.rotation.x=Math.PI/2; nose.position.y=-TL-.002; EL.trunk[TN-1].add(nose);
+  for (const [sx,sz,off] of [[1,1,0],[-1,1,Math.PI],[1,-1,Math.PI],[-1,-1,0]]){
+    const hip=new T.Group(); hip.position.set(sx*.27,-.22,sz*.4); ele.add(hip);
+    const g=new T.CylinderGeometry(.15,.135,.6,14); g.translate(0,-.3,0); hip.add(new T.Mesh(g,skin));
+    const ft=new T.Mesh(new T.CylinderGeometry(.14,.148,.05,14),toe); ft.position.y=-.585; hip.add(ft);
+    EL.legs.push({hip,off});
+  }
+  const tail=new T.Group(); tail.position.set(0,.12,-.6); ele.add(tail); EL.tail=tail;
+  const tg2=new T.CylinderGeometry(.018,.012,.36,6); tg2.translate(0,-.18,0); tail.add(new T.Mesh(tg2,skin)); tail.rotation.x=.35;
+  const tuft=new T.Mesh(new T.SphereGeometry(.035,8,6),black); tuft.position.y=-.37; tail.add(tuft);
+}
+// tia nước phun ra từ vòi + vòng gợn nước khi voi hút nước
+const SPR={n:500,i:0,pos:new Float32Array(1500).fill(-1000),vel:new Float32Array(1500),life:new Float32Array(500),acc:0,pts:null};
+{ const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(SPR.pos,3));
+  SPR.pts=new T.Points(g,new T.PointsMaterial({color:0xd6f1ff,size:.13,transparent:true,opacity:.85,depthWrite:false})); SPR.pts.frustumCulled=false; scene.add(SPR.pts); }
+const RIP=new T.Mesh(new T.RingGeometry(.15,.21,28),new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,side:T.DoubleSide,depthWrite:false})); RIP.rotation.x=-Math.PI/2; scene.add(RIP);
+const E={tank:0,mode:null,t:0,go:null,w:null,base:-.28,ang:new Array(9).fill(-.05),earT:0,hp:0,wet:{human:-9,dog:-9},sg:null,sf:null};
+const tmpE=new T.Vector3(), tmpD=new T.Vector3(), tmpQ=new T.Quaternion();
+function waterY(x,z){   // độ cao mặt nước tại (x,z), null nếu không có nước
+  if (Math.abs(x-40)<55 && Math.abs(z)<55 && H(x,z)<-.03) return WH(x,z,time);
+  if (x>-90&&x<46&&z>-114&&z<-21){ const s=sinfo(x,z); if (s[0]<1.5) return Math.min(1-1.55*s[1],H0(x,z)-.5)+.3; }
+  return null;
+}
+function eleNearWater(){ const o=V.elephant; for (const d of [1.25,.7,0]){ const x=o.x+Math.sin(o.yaw)*d, z=o.z+Math.cos(o.yaw)*d, w=waterY(x,z); if (w!==null) return {x,z,y:w}; } return null; }
+function eleAct(n){
+  if (cur!=='elephant') sel('elephant'); audioStart();
+  if (E.mode && E.mode!=='go') return;
+  if (n==='drink'){ const w=eleNearWater(); if (w){ E.mode='drink'; E.t=0; E.w=w; showCap('Voi con đang uống nước…',2500); } else { E.mode='go'; E.go={t:0}; showCap('Voi con đi tìm nước…',3000); } }
+  else if (n==='spray'){ E.t=0; if (E.tank<.05){ E.mode='sad'; showCap('Vòi hết nước rồi! Cho voi uống nước trước đã (phím U).',3500); } else { E.mode='spray'; trumpet(); } }
+}
+function trumpet(){
+  if (!AC||AC.state!=='running') return; const t=AC.currentTime+.02, lp=AC.createBiquadFilter(), g=AC.createGain(); lp.type='lowpass'; lp.frequency.value=1900;
+  for (const [ty,m] of [['sawtooth',1],['square',1.008]]){ const o=AC.createOscillator(); o.type=ty;
+    o.frequency.setValueAtTime(320*m,t); o.frequency.linearRampToValueAtTime(580*m,t+.16); o.frequency.linearRampToValueAtTime(490*m,t+.65); o.frequency.linearRampToValueAtTime(380*m,t+.95);
+    o.connect(lp); o.start(t); o.stop(t+1.05); }
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.15,t+.05); g.gain.setValueAtTime(.15,t+.75); g.gain.linearRampToValueAtTime(0,t+1); lp.connect(g); g.connect(MG);
+}
+function thump(){ if (!AC||AC.state!=='running') return; const t=AC.currentTime, o=AC.createOscillator(), g=AC.createGain(); o.frequency.setValueAtTime(90,t); o.frequency.exponentialRampToValueAtTime(45,t+.12);
+  g.gain.setValueAtTime(.16,t); g.gain.exponentialRampToValueAtTime(.001,t+.16); o.connect(g); g.connect(MG); o.start(t); o.stop(t+.18); }
+function wetHit(who){ if (time-E.wet[who]<6) return; E.wet[who]=time;
+  if (who==='human'){ if (!HX.act) say('Ối! Ướt hết rồi, voi con nghịch quá!'); } else { audioStart(); bark(3,1.2); } }
+scene.add(rover,drone,boat,dog,ele);
 
 // ---- Camera gắn trên từng thiết bị ----
 const CAMS = {}, tmpV = new T.Vector3();
@@ -459,6 +527,7 @@ addCam('rover',rover,0,.85,.45,-.05,55);
 addCam('dog',dog,0,.28,.88,-.1,58);
 addCam('drone',drone,0,-.04,.42,-.35,65,1/1.3);
 addCam('boat',boat,0,1.9,.2,-.08,55);
+addCam('elephant',EL.head,0,.3,.2,-.12,60,.7);
 
 // ---- Robot hình người: 17 khớp, có mặt (mắt chớp, miệng nói), bàn tay có ngón để cầm nắm ----
 const HL1=.32, HL2=.32, HHIP=.61, hum = new T.Group(), HJ = {legs:[],arms:[],neck:null,mouth:null,eyes:[],handR:null,fing:[]};
@@ -508,7 +577,8 @@ const V = {
   drone:{g:drone,x:-8,z:6,y:H(-8,6)+.2,yaw:Math.PI/2,vx:0,vy:0,vz:0,p:0},
   boat:{g:boat,x:40,z:0,yaw:Math.PI,v:0,y:0,vy:0},
   dog:{g:dog,x:-14,z:-6,yaw:Math.PI/2,v:0,ph:0},
-  human:{g:hum,x:-12,z:-10,yaw:Math.PI/2,v:0,ph:0,hy:0}
+  human:{g:hum,x:-12,z:-10,yaw:Math.PI/2,v:0,ph:0,hy:0},
+  elephant:{g:ele,x:0,z:-8,yaw:Math.PI/2,v:0,ph:0}
 };
 let cur = 'rover', hover = true;
 
@@ -517,16 +587,17 @@ const keys = {}, K = n => keys[n] ? 1 : 0;
 const $ = id => document.getElementById(id);
 function sel(n){
   cur = n; try{ touchMark(); }catch(_){} camYaw = V[n].yaw; off = 0; NET.state='conn'; NET.tConn=time+1; NET.rx.t=-9; NET.q=[]; NET.tel=null; if(db) db.ref(R+'/active').set(n);
-  for (const k of ['rover','drone','boat','dog','human']) { $('b-'+k).classList.toggle('on',k===n); }
+  for (const k of ['rover','drone','boat','dog','human','elephant']) { $('b-'+k).classList.toggle('on',k===n); }
 }
 function toggleHover(){ hover=!hover; $('b-hover').classList.toggle('on',hover); $('b-hover').textContent='H Drone tự giữ độ cao: '+(hover?'BẬT':'TẮT'); }
 addEventListener('keydown',e=>{
   const k = e.key==='Shift'?'shift':e.key===' '?'space':e.key.toLowerCase(); keys[k]=1;
-  if(k==='1')sel('rover'); if(k==='2')sel('drone'); if(k==='3')sel('boat'); if(k==='4')sel('dog'); if(k==='5')sel('human'); if(k==='h')toggleHover();
+  if(k==='1')sel('rover'); if(k==='2')sel('drone'); if(k==='3')sel('boat'); if(k==='4')sel('dog'); if(k==='5')sel('human'); if(k==='6')sel('elephant'); if(k==='h')toggleHover();
+  if(cur==='elephant'){ if(k==='u') eleAct('drink'); if(k==='space'&&!e.repeat) eleAct('spray'); }
   if(['space','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault();
 });
 addEventListener('keyup',e=>{ delete keys[e.key==='Shift'?'shift':e.key===' '?'space':e.key.toLowerCase()]; });
-for (const k of ['rover','drone','boat','dog','human']) { $('b-'+k).onclick = e => { sel(k); e.target.blur(); }; }
+for (const k of ['rover','drone','boat','dog','human','elephant']) { $('b-'+k).onclick = e => { sel(k); e.target.blur(); }; }
 $('b-hover').onclick = e => { toggleHover(); e.target.blur(); };
 for (const id of ['wind','grav']){ $(id).addEventListener('input',()=>{ $(id==='wind'?'wv':'gv').textContent=$(id).value; }); $(id).addEventListener('pointerup',e=>e.target.blur()); }
 
@@ -540,10 +611,10 @@ const FIREBASE_CONFIG = {
 };
 const FRAME = {w:480,h:270,q:.5,fps:6};   // chất lượng video gửi về điện thoại
 const ROOM = new URLSearchParams(location.search).get('room') || 'demo', R = 'sim/'+ROOM;
-const BAT = {rover:100,dog:100,boat:100,drone:100,human:100};
+const BAT = {rover:100,dog:100,boat:100,drone:100,human:100,elephant:100};
 const ctl = {f:0,tr:0,u:0}, joy = {x:0,y:0,u:0};
 const NET = {q:[],state:'conn',tConn:1,rx:{f:0,tr:0,u:0,t:-9,ts:0},tel:null};
-const VN = {rover:'Robot bánh xe',dog:'Chó robot',boat:'Thuyền',drone:'Flycam',human:'Robot người'};
+const VN = {rover:'Robot bánh xe',dog:'Chó robot',boat:'Thuyền',drone:'Flycam',human:'Robot người',elephant:'Voi con'};
 let db=null, fbOnline=false, phoneOn=false, lastTel=0, lastFrame=0, lastBark=null, lastAct=null;
 try {
   if (!FIREBASE_CONFIG.apiKey.startsWith('DAN_')){
@@ -735,6 +806,7 @@ function faceUpdate(dt){
 }
 // ---- hành động ----
 function doAct(n){
+  if (n==='drink'||n==='spray') return eleAct(n);
   if (n==='hello') n='wave';
   if (cur!=='human') sel('human');
   audioStart();
@@ -918,6 +990,72 @@ function step(dt,t){
     o.g.position.set(o.x,H(o.x,o.z)+LEG_H+.17+.02*sp*Math.sin(2*o.ph),o.z);
     tilt(o.g,H,o.x,o.z,o.yaw,.5,.3);
   }
+  { // Voi con
+    const o=V.elephant, a=cur==='elephant';
+    let fr=a?f:0, tt=a?tr:0;
+    if (E.mode==='go'){   // tự đi về phía hồ để uống nước
+      E.go.t+=dt; const e=wrap(Math.atan2(28-o.x,Math.max(-20,Math.min(20,o.z))-o.z)-o.yaw);
+      fr=Math.abs(e)<.8?1:.3; tt=Math.max(-1,Math.min(1,e*2));
+      const w=eleNearWater();
+      if (w){ E.mode='drink'; E.t=0; E.w=w; showCap('Voi con đang uống nước…',2500); }
+      else if (E.go.t>30 || (a&&kb)) E.mode=null;
+    }
+    if (E.mode==='drink'||E.mode==='sad'){ fr=0; tt=0; } else if (E.mode==='spray') fr=0;
+    o.v += (fr*3.2 - 1.6*o.v)*dt;
+    o.yaw += tt*1.4*dt*Math.min(1,Math.abs(o.v)/1.2+.45)*(o.v>=-.1?1:-1);
+    const nx=o.x+Math.sin(o.yaw)*o.v*dt, nz=o.z+Math.cos(o.yaw)*o.v*dt;
+    if (H(nx,nz)<-.95 || Math.abs(nx)>110 || Math.abs(nz)>110) o.v*=-.3; else { o.x=nx; o.z=nz; }
+    const sp=Math.min(1,Math.abs(o.v)/1.8), dir=o.v>=0?1:-1, pph=o.ph;
+    o.ph += 6.283*(.8+Math.abs(o.v)*.5)*dt*(Math.abs(o.v)>.1?1:0);
+    for (const Lg of EL.legs) Lg.hip.rotation.x = Math.sin(o.ph+Lg.off)*.42*sp*dir;
+    if (a && sp>.2 && Math.floor(o.ph/Math.PI)!==Math.floor(pph/Math.PI)) thump();
+    o.g.position.set(o.x, H(o.x,o.z)+.82+.025*sp*Math.abs(Math.sin(o.ph)), o.z);
+    tilt(o.g,H,o.x,o.z,o.yaw,.9,.5);
+    // vòi: mỗi trạng thái có một dáng vòi riêng
+    E.t+=dt; let base=-.28, hp=0, tgt=i=>-.05+.06*Math.sin(t*1.4+i*.6)+sp*.08*Math.sin(o.ph*2+i), emit=false, suck=false;
+    if (E.mode==='drink'){
+      if (E.t<.9){ base=-.42; hp=.15; tgt=()=>-.02; }
+      else if (E.t<2.6){ base=-.45; hp=.15; tgt=i=>-.02+.02*Math.sin(t*8+i); suck=true; E.tank=Math.min(1,E.tank+dt/1.7); }
+      else if (E.t<3.4){ base=.25; tgt=()=>.3; }
+      else { E.mode=null; showCap('Voi con uống no nước rồi! Bấm Space để phun nước.',3500); }
+    } else if (E.mode==='spray'){
+      base=-1.0; hp=-.2; tgt=i=>-.15+.03*Math.sin(t*5+i);
+      if (E.t>.55){ const want=E.t<3.6||(a&&K('space'));
+        if (want&&E.tank>0){ emit=true; E.tank=Math.max(0,E.tank-dt*.28); }
+        else { E.mode='lower'; E.t=0; if (E.tank<=0) showCap('Hết nước rồi! Bấm U để voi đi uống tiếp.',3500); } }
+    } else if (E.mode==='lower'){ if (E.t>.6) E.mode=null; }
+    else if (E.mode==='sad'){ base=-.1; tgt=()=>.05; if (E.t>1.3) E.mode=null; }
+    EL.head.rotation.y = E.mode==='sad' ? .25*Math.sin(E.t*9)*Math.max(0,1-E.t/1.2) : 0;
+    const rr=Math.min(1,(E.mode==='spray'?6:4)*dt);
+    E.base+=(base-E.base)*rr; EL.trunkBase.rotation.x=E.base;
+    for (let i=1;i<EL.trunk.length;i++){ E.ang[i]+=(tgt(i)-E.ang[i])*rr; EL.trunk[i].rotation.x=E.ang[i]; }
+    E.hp+=(hp-E.hp)*rr; EL.head.rotation.x=E.hp;
+    E.earT+=dt*(E.mode==='spray'?9:2.2);
+    for (const ea of EL.ears) ea.g.rotation.y = -ea.s*(.25+.22*Math.sin(E.earT)+(E.mode==='spray'?.25:0));
+    EL.tail.rotation.z=.25*Math.sin(t*3.1);
+    // phun nước
+    if (emit){ EL.tip.getWorldPosition(tmpE); EL.tip.getWorldQuaternion(tmpQ); tmpD.set(0,-1,0).applyQuaternion(tmpQ);
+      SPR.acc+=dt*170;
+      while (SPR.acc>=1){ SPR.acc--; const i=SPR.i++%SPR.n, b=i*3, s=6.2+Math.random()*1.2;
+        SPR.pos[b]=tmpE.x; SPR.pos[b+1]=tmpE.y; SPR.pos[b+2]=tmpE.z;
+        SPR.vel[b]=tmpD.x*s+(Math.random()-.5)*.9; SPR.vel[b+1]=tmpD.y*s+(Math.random()-.5)*.9; SPR.vel[b+2]=tmpD.z*s+(Math.random()-.5)*.9; SPR.life[i]=2; } }
+    const P=SPR.pos, VL=SPR.vel, LF=SPR.life;
+    for (let i=0;i<SPR.n;i++){ if (LF[i]<=0) continue; LF[i]-=dt; const b=i*3;
+      VL[b+1]-=9.8*dt; VL[b]+=wx*.12*dt; VL[b+2]+=wz*.12*dt;
+      P[b]+=VL[b]*dt; P[b+1]+=VL[b+1]*dt; P[b+2]+=VL[b+2]*dt;
+      const gnd=Math.max(H0(P[b],P[b+2]),(Math.abs(P[b]-40)<55&&Math.abs(P[b+2])<55)?0:-99);
+      if (P[b+1]<gnd||LF[i]<=0){ LF[i]=0; P[b+1]=-1000; continue; }
+      if ((i&3)===0) for (const who of ['human','dog']){ const q=V[who]; if (Math.abs(P[b]-q.x)<.55 && Math.abs(P[b+2]-q.z)<.55 && P[b+1]-H(q.x,q.z)<1.5) wetHit(who); }
+    }
+    SPR.pts.geometry.attributes.position.needsUpdate=true;
+    // gợn nước khi hút
+    if (suck && E.w){ const k=(t*1.4)%1; RIP.position.set(E.w.x,E.w.y+.03,E.w.z); RIP.scale.setScalar(1+k*4); RIP.material.opacity=.6*(1-k); } else RIP.material.opacity=0;
+    // tiếng nước
+    if (AC && AC.state==='running'){
+      if (!E.sg){ E.sf=nsrc(2600,'bandpass',.9); E.sg=AC.createGain(); E.sg.gain.value=0; E.sf.connect(E.sg); E.sg.connect(MG); }
+      E.sg.gain.setTargetAtTime(emit?.16:suck?.08:0,AC.currentTime,.06); E.sf.frequency.setTargetAtTime(suck?650:2600,AC.currentTime,.05);
+    }
+  }
   { // Robot hình người
     const o=V.human, a=cur==='human';
     let fr=a?f:0, tt=a?tr:0, res=null;
@@ -990,7 +1128,7 @@ function loop(){
   if (hudT>.12){ pipUI();
     hudT=0;
     const sp = cur==='drone' ? Math.hypot(A.vx,A.vz) : A.v;
-    const line = cur==='drone' ? `Cao so với đất: ${(A.y-H(A.x,A.z)).toFixed(1)} m` : cur==='boat' ? `Độ sâu nước: ${Math.max(0,-H(A.x,A.z)).toFixed(1)} m` : `Cao độ địa hình: ${H(A.x,A.z).toFixed(1)} m`;
+    const line = cur==='elephant' ? `Nước trong vòi: ${Math.round(E.tank*100)}% · U: uống · Space: phun` : cur==='drone' ? `Cao so với đất: ${(A.y-H(A.x,A.z)).toFixed(1)} m` : cur==='boat' ? `Độ sâu nước: ${Math.max(0,-H(A.x,A.z)).toFixed(1)} m` : `Cao độ địa hình: ${H(A.x,A.z).toFixed(1)} m`;
     $('st').textContent = `${VN[cur]} · ${Math.abs(sp).toFixed(1)} m/s · ${line} · HDG ${Math.round(((A.yaw*57.296)%360+360)%360)}° · PIN ${Math.round(BAT[cur])}%`;
   }
 }
@@ -1046,7 +1184,7 @@ scene.traverse(o=>{ if(!o.isMesh) return; const m=o.material;
   if (o.geometry===tg) o.receiveShadow=true;
   else if (m && m.flatShading===true && o.position.length()<200){ o.castShadow=true; o.receiveShadow=true; }
   else if (o.isInstancedMesh && m && m.vertexColors && m.side===T.DoubleSide && !m.map) o.receiveShadow=true; });
-[hum,dog,rover,drone,boat].forEach(g=>g.traverse(m=>{ if(m.isMesh){ m.castShadow=true; m.receiveShadow=true; } }));
+[hum,dog,rover,drone,boat,ele].forEach(g=>g.traverse(m=>{ if(m.isMesh){ m.castShadow=true; m.receiveShadow=true; } }));
 PROPS.forEach(p=>{ p.m.castShadow=true; p.m.receiveShadow=true; });
 const MIST=[];
 { const tex=glowTex([[0,'rgba(255,240,215,.6)'],[1,'rgba(255,240,215,0)']]);
@@ -1104,7 +1242,7 @@ body.live #cap{display:none}
 <div id="lv" aria-live="polite">
   <div class="bx">
     <h2>🎮 Bạn điều khiển robot!</h2>
-    <div class="cm"><span><b>nhảy</b></span><span><b>lộn</b></span><span><b>vẫy</b></span><span><b>thái cực</b></span><span><b>sủa</b></span><span><b>tiến</b> · <b>lùi</b> · <b>trái</b> · <b>phải</b></span><span><b>bay lên</b></span><span><b>gió to</b></span><span><b>1</b>–<b>5</b> đổi xe</span></div>
+    <div class="cm"><span><b>nhảy</b></span><span><b>lộn</b></span><span><b>vẫy</b></span><span><b>thái cực</b></span><span><b>sủa</b></span><span><b>tiến</b> · <b>lùi</b> · <b>trái</b> · <b>phải</b></span><span><b>bay lên</b></span><span><b>gió to</b></span><span><b>uống</b> · <b>phun</b> (voi)</span><span><b>1</b>–<b>6</b> đổi xe</span></div>
     <div class="sm">Gõ vào bình luận là robot làm ngay. Tặng quà: robot nhào lộn và gọi tên bạn.</div>
   </div>
   <div class="bx" id="lv-say" style="display:none"><b>🤖 Robot nói</b><span id="lv-saytxt"></span></div>
@@ -1137,6 +1275,9 @@ const CMDS=[
  [['lang gio','het gio','tat gio'],'lặng gió',()=>{ setWind(0); return 800; }],
  [['bay len','bay cao'],'bay lên',()=>{ if(cur!=='drone')sel('drone'); return hold(['space'],1600); }],
  [['ha xuong','ha canh'],'hạ xuống',()=>{ if(cur!=='drone')sel('drone'); return hold(['shift'],1300); }],
+ [['uong nuoc','uong','khat'],'voi uống nước',()=>{ eleAct('drink'); return 3800; }],
+ [['phun nuoc','phun','tam'],'voi phun nước',()=>{ eleAct('spray'); return 4300; }],
+ [['6','con voi','voi con','elephant'],'voi con',()=>{ sel('elephant'); return 600; }],
  [['nhao lon','lon','flip'],'nhào lộn',()=>act('flip')],
  [['nhay','jump'],'nhảy',()=>act('jump')],
  [['vay','vay tay','chao','hello','hi'],'vẫy tay',()=>act('wave')],
@@ -1171,14 +1312,15 @@ function enqueue(job){ if(LV.q.length>=12) LV.q.shift(); LV.q.push(job); }
 function sayQ(text){ if(!text)return; if(LV.sq.length>=4) LV.sq.shift(); LV.sq.push(String(text).slice(0,220)); }
 setInterval(()=>{
   const t=now();
-  if (LV.q.length && t>=LV.busyUntil && !HX.act){ const j=LV.q.shift(); let ms=1200; try{ ms=j.run()||1200; }catch(e){ console.error(e); } LV.busyUntil=t+Math.max(900,ms); LV.lastAny=t; }
+  if (LV.q.length && t>=LV.busyUntil && !HX.act && !(E.mode&&E.mode!=='go')){ const j=LV.q.shift(); let ms=1200; try{ ms=j.run()||1200; }catch(e){ console.error(e); } LV.busyUntil=t+Math.max(900,ms); LV.lastAny=t; }
   if (LV.sq.length && !isSpeaking() && !(HX.act&&['wave','tai','teach'].includes(HX.act.n)&&t<LV.busyUntil+2500)) { say(LV.sq.shift()); LV.lastAny=t; }
   // không ai ra lệnh thì robot tự hoạt động để cảnh luôn chuyển động
   if (document.body.classList.contains('live') && !LV.q.length && !LV.sq.length && t-LV.lastAny>40000 && t>LV.idleAt){
     LV.idleAt=t+40000; const r=Math.random();
-    if (r<.3) enqueue({run:()=>act('wave')});
-    else if (r<.55) enqueue({run:()=>{ sel('drone'); return hold(['space','w'],2500); }});
-    else if (r<.75) enqueue({run:()=>act('tai')});
+    if (r<.22) enqueue({run:()=>act('wave')});
+    else if (r<.4) enqueue({run:()=>{ sel('drone'); return hold(['space','w'],2500); }});
+    else if (r<.55) enqueue({run:()=>act('tai')});
+    else if (r<.8) enqueue({run:()=>{ eleAct(E.tank>.3?'spray':'drink'); return 4000; }});
     else { enqueue({run:()=>{ sel('dog'); audioStart(); bark(2,1); return 900; }}); sayQ('Không ai điều khiển tôi à? Gõ nhảy hoặc lộn vào bình luận đi!'); }
   }
 },250);

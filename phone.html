@@ -47,13 +47,14 @@ button.on{background:#2f7df6;border-color:#2f7df6}
 <div id="osd"></div>
 <div id="msg"></div>
 <div id="bot">
-  <div id="acts"><button data-a="wave">👋 Vẫy tay</button><button data-a="jump">⬆ Nhảy</button><button data-a="flip">🤸 Nhào lộn</button><button data-a="grasp">✋ Cầm</button><button data-a="release">Thả</button><button data-a="tai">☯ Múa</button><button data-a="teach">🎓 Dạy</button><button data-a="stop">■ Dừng</button></div>
+  <div id="acts"><button data-a="wave">👋 Vẫy tay</button><button data-a="jump">⬆ Nhảy</button><button data-a="flip">🤸 Nhào lộn</button><button data-a="grasp">✋ Cầm</button><button data-a="release">Thả</button><button data-a="tai">☯ Múa</button><button data-a="teach">🎓 Dạy</button><button data-a="stop">■ Dừng</button><button data-a="drink" data-for="elephant">💧 Uống nước</button><button data-a="spray" data-for="elephant">💦 Phun nước</button></div>
   <div id="pvs">
     <button data-v="rover" class="on">Robot</button>
     <button data-v="dog">Chó</button>
     <button data-v="boat">Thuyền</button>
     <button data-v="drone">Flycam</button>
     <button data-v="human">Người</button>
+    <button data-v="elephant">Voi</button>
   </div>
   <div id="ctrls">
     <div id="padwrap"><div id="dpad"><span></span><button data-d="f">▲</button><span></span><button data-d="l">◀</button><span></span><button data-d="r">▶</button><span></span><button data-d="b">▼</button><span></span></div><div id="joy" style="display:none"><div id="knob"></div></div></div>
@@ -73,10 +74,10 @@ const FIREBASE_CONFIG = {
 };
 const ROOM = new URLSearchParams(location.search).get('room') || 'demo', R = 'sim/' + ROOM;
 const $ = id => document.getElementById(id);
-const VN = {rover:'Robot bánh xe',dog:'Chó robot',boat:'Thuyền',drone:'Flycam',human:'Robot người'};
+const VN = {rover:'Robot bánh xe',dog:'Chó robot',boat:'Thuyền',drone:'Flycam',human:'Robot người',elephant:'Voi con'};
 let db = null, online = false, active = 'rover', tel = null, telAt = 0, frames = 0, fps = 0;
 
-function mark(){ document.querySelectorAll('#pvs button').forEach(b => b.classList.toggle('on', b.dataset.v === active)); $('alt').style.display = (active === 'drone' || active === 'dog') ? 'flex' : 'none'; $('aup').style.display = $('adn').style.display = active === 'drone' ? '' : 'none'; $('bk').style.display = active === 'dog' ? '' : 'none'; $('acts').style.display = active === 'human' ? 'flex' : 'none'; }
+function mark(){ document.querySelectorAll('#pvs button').forEach(b => b.classList.toggle('on', b.dataset.v === active)); $('alt').style.display = (active === 'drone' || active === 'dog') ? 'flex' : 'none'; $('aup').style.display = $('adn').style.display = active === 'drone' ? '' : 'none'; $('bk').style.display = active === 'dog' ? '' : 'none'; $('acts').style.display = (active === 'human' || active === 'elephant') ? 'flex' : 'none'; document.querySelectorAll('#acts button').forEach(b => { b.style.display = (b.dataset.for || 'human') === active ? '' : 'none'; }); }
 document.querySelectorAll('#pvs button').forEach(b => b.onclick = () => { active = b.dataset.v; mark(); if (db) db.ref(R+'/active').set(active); });
 
 if (FIREBASE_CONFIG.apiKey.startsWith('DAN_')) {
