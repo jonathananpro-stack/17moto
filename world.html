@@ -1079,7 +1079,9 @@ loop();
 #lv{display:none}
 body.live #lv{display:flex}
 body.live #hud,body.live #pip,body.live #chat,body.live #snd,body.live #tui,body.live #st{display:none!important}
-body.live #cap{bottom:auto;top:56%;font-size:19px;padding:10px 18px;max-width:min(560px,90vw);background:rgba(10,18,32,.72)}
+body.live #cap{display:none}
+#lv-say{font-size:16px;line-height:1.4;border-left:4px solid #ffd166}
+#lv-say b{display:block;font-size:12px;color:#ffd166;margin-bottom:2px}
 #lv{position:fixed;left:12px;top:calc(env(safe-area-inset-top,0px) + 12px);flex-direction:column;gap:8px;width:min(320px,62vw);color:#fff;z-index:8;pointer-events:none}
 #lv .bx{background:rgba(10,18,32,.74);border-radius:14px;padding:10px 13px}
 #lv h2{margin:0 0 6px;font-size:17px;line-height:1.25}
@@ -1105,6 +1107,7 @@ body.live #cap{bottom:auto;top:56%;font-size:19px;padding:10px 18px;max-width:mi
     <div class="cm"><span><b>nhảy</b></span><span><b>lộn</b></span><span><b>vẫy</b></span><span><b>thái cực</b></span><span><b>sủa</b></span><span><b>tiến</b> · <b>lùi</b> · <b>trái</b> · <b>phải</b></span><span><b>bay lên</b></span><span><b>gió to</b></span><span><b>1</b>–<b>5</b> đổi xe</span></div>
     <div class="sm">Gõ vào bình luận là robot làm ngay. Tặng quà: robot nhào lộn và gọi tên bạn.</div>
   </div>
+  <div class="bx" id="lv-say" style="display:none"><b>🤖 Robot nói</b><span id="lv-saytxt"></span></div>
   <div class="bx">
     <div class="row2"><span>❤ Tim cả phòng</span><span id="lv-like">0 / 1.000</span></div>
     <div class="bar"><i id="lv-likebar"></i></div>
@@ -1207,6 +1210,9 @@ function handle(e){
   }
 }
 window.liveEvent=handle;
+// lời robot nói hiện trong cột bên trái để không đè lên các khung khác
+{ const cap=g('cap'), box=g('lv-say'), tx=g('lv-saytxt');
+  new MutationObserver(()=>{ tx.textContent=cap.textContent; box.style.display=(+cap.style.opacity>0)?'':'none'; }).observe(cap,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['style']}); }
 // nguồn 1: cầu nối TikTok gửi qua Firebase
 if (db){
   db.ref(R+'/live/ev').orderByChild('ts').startAt(Date.now()-5000).on('child_added',s=>{ const v=s.val(); if(v){ v.id=v.id||s.key; handle(v); } });
