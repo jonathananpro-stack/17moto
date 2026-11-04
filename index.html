@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1b4f63">
+<title>17 mô tơ – Thế giới ảo</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(#1b4f63,#f1c88c);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#fff}
+main{width:min(92vw,520px);padding:24px 0;display:flex;flex-direction:column}
+h1{margin:0 0 6px;font-size:26px;text-align:center}
+p.sub{margin:0 0 22px;text-align:center;opacity:.9}
+a.card{display:block;margin:10px 0;padding:22px 18px;border-radius:16px;background:rgba(10,18,32,.78);color:#fff;text-decoration:none}
+a.card b{display:block;font-size:19px;margin-bottom:4px}
+a.card span{font-size:13px;opacity:.8}
+a.card:hover,a.card:active{background:#2f7df6}
+small{display:block;margin-top:16px;text-align:center;opacity:.85;font-size:12px;line-height:1.5}
+</style>
+</head>
+<body>
+<main>
+  <h1>17 mô tơ · Thế giới ảo</h1>
+  <p class="sub">Robot, chó, thuyền và flycam trong thế giới 3D</p>
+  <a class="card" id="w" href="world.html"><b>🌍 Vào thế giới ảo</b><span>Chạy trên máy tính. Hiển thị thế giới 3D và gửi hình camera về điện thoại.</span></a>
+  <a class="card" id="p" href="phone.html"><b>📱 Vào điện thoại điều khiển</b><span>Chạy trên điện thoại. Xem camera và điều khiển từ xa.</span></a>
+  <small id="room"></small>
+</main>
+<script>
+const q = location.search;
+document.getElementById('w').href += q; document.getElementById('p').href += q;
+const room = new URLSearchParams(q).get('room') || 'demo';
+document.getElementById('room').textContent = 'Phòng kết nối: ' + room + ' (đổi bằng cách thêm ?room=ten vào cuối địa chỉ trang này; máy tính và điện thoại phải cùng phòng)';
+if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) document.getElementById('p').style.order = -1;
+</script>
+</body>
+</html>

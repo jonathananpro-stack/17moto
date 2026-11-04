@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Điều khiển từ xa</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#fpv{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 32px);width:100%;aspect-ratio:16/9;object-fit:contain;background:#000}
+#top{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 8px) 12px 8px;font-size:12px;background:#000;z-index:2}
+#osd{position:fixed;left:12px;top:calc(env(safe-area-inset-top,0px) + 32px + 56.25vw + 12px);font:18px/1.6 ui-monospace,monospace;color:#9dff9d;text-shadow:0 0 3px #000;white-space:pre}
+#msg{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 32px + 22vw);text-align:center;font-weight:600;color:#ffd24a;text-shadow:0 0 6px #000;padding:0 20px}
+#bot{position:fixed;left:0;right:0;bottom:0;padding:10px 14px calc(env(safe-area-inset-bottom,0px) + 12px);background:#000}
+#pvs{display:flex;gap:6px;margin-bottom:12px}
+button{font:inherit;font-size:13px;color:#fff;background:#ffffff26;border:1px solid #ffffff40;border-radius:10px;padding:10px 4px}
+#pvs button{flex:1;padding:10px 2px;font-size:12px}
+button.on{background:#2f7df6;border-color:#2f7df6}
+#ctrls{display:flex;justify-content:space-between;align-items:center;padding:0 6px}
+#joy{width:140px;height:140px;border-radius:50%;background:#ffffff1a;border:1px solid #ffffff40;position:relative}
+#knob{position:absolute;left:35px;top:35px;width:70px;height:70px;border-radius:50%;background:#2f7df6cc;pointer-events:none}
+#dpad{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px);gap:6px}
+#dpad button{padding:0;font-size:20px;border-radius:12px}
+#padwrap{width:156px;height:156px;display:flex;align-items:center;justify-content:center}
+#mode{font-size:11px;padding:6px 8px}
+#alt{display:flex;flex-direction:column;gap:10px}
+#alt button{width:76px;height:58px;font-size:20px}
+#acts{display:none;gap:6px;margin-bottom:8px;overflow-x:auto}
+#acts button{flex:0 0 auto;padding:8px 10px;font-size:12px}
+@media (orientation:landscape){
+#fpv{top:0;height:100%;aspect-ratio:auto}
+#top{background:linear-gradient(#000a,#0000);padding-bottom:14px}
+#msg{top:42%}
+#osd{top:calc(env(safe-area-inset-top,0px) + 36px);font:12px/1.5 ui-monospace,monospace}
+#bot{background:none;padding:0 14px calc(env(safe-area-inset-bottom,0px) + 8px);pointer-events:none}
+#bot>*{pointer-events:auto}
+#pvs{position:fixed;top:calc(env(safe-area-inset-top,0px) + 34px);left:50%;transform:translateX(-50%);width:min(56vw,420px);margin:0}
+#pvs button{padding:6px 2px;font-size:12px}
+#acts{position:fixed;right:8px;top:calc(env(safe-area-inset-top,0px) + 70px);flex-direction:column;overflow:visible;margin:0}
+}
+</style>
+</head>
+<body>
+<img id="fpv" alt="">
+<div id="top"><span id="pv"></span><span id="st"></span></div>
+<div id="osd"></div>
+<div id="msg"></div>
+<div id="bot">
+  <div id="acts"><button data-a="wave">👋 Vẫy tay</button><button data-a="jump">⬆ Nhảy</button><button data-a="flip">🤸 Nhào lộn</button><button data-a="grasp">✋ Cầm</button><button data-a="release">Thả</button><button data-a="tai">☯ Múa</button><button data-a="teach">🎓 Dạy</button><button data-a="stop">■ Dừng</button></div>
+  <div id="pvs">
+    <button data-v="rover" class="on">Robot</button>
+    <button data-v="dog">Chó</button>
+    <button data-v="boat">Thuyền</button>
+    <button data-v="drone">Flycam</button>
+    <button data-v="human">Người</button>
+  </div>
+  <div id="ctrls">
+    <div id="padwrap"><div id="dpad"><span></span><button data-d="f">▲</button><span></span><button data-d="l">◀</button><span></span><button data-d="r">▶</button><span></span><button data-d="b">▼</button><span></span></div><div id="joy" style="display:none"><div id="knob"></div></div></div>
+    <button id="mode">Joystick</button>
+    <div id="alt"><button id="aup">▲</button><button id="adn">▼</button><button id="bk">🐕 Sủa</button></div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// Điền cấu hình web app của dự án Firebase (giống file thế giới ảo).
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBIyS4M_57e8Y4OgDWMhGF4WSag7TBtSuk',
+  authDomain: 'kpie-e0892.firebaseapp.com',
+  databaseURL: 'https://kpie-e0892-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'kpie-e0892'
+};
+const ROOM = new URLSearchParams(location.search).get('room') || 'demo', R = 'sim/' + ROOM;
+const $ = id => document.getElementById(id);
+const VN = {rover:'Robot bánh xe',dog:'Chó robot',boat:'Thuyền',drone:'Flycam',human:'Robot người'};
+let db = null, online = false, active = 'rover', tel = null, telAt = 0, frames = 0, fps = 0;
+
+function mark(){ document.querySelectorAll('#pvs button').forEach(b => b.classList.toggle('on', b.dataset.v === active)); $('alt').style.display = (active === 'drone' || active === 'dog') ? 'flex' : 'none'; $('aup').style.display = $('adn').style.display = active === 'drone' ? '' : 'none'; $('bk').style.display = active === 'dog' ? '' : 'none'; $('acts').style.display = active === 'human' ? 'flex' : 'none'; }
+document.querySelectorAll('#pvs button').forEach(b => b.onclick = () => { active = b.dataset.v; mark(); if (db) db.ref(R+'/active').set(active); });
+
+if (FIREBASE_CONFIG.apiKey.startsWith('DAN_')) {
+  $('msg').textContent = 'Chưa điền cấu hình Firebase trong file này';
+} else {
+  firebase.initializeApp(FIREBASE_CONFIG); db = firebase.database();
+  db.ref('.info/connected').on('value', s => {
+    online = !!s.val();
+    if (online){ const p = db.ref(R+'/phone/online'); p.onDisconnect().set(false); p.set(true); }
+  });
+  db.ref(R+'/active').on('value', s => { const v = s.val(); if (v && VN[v]){ active = v; mark(); } });
+  db.ref(R+'/tel').on('value', s => { tel = s.val(); telAt = Date.now(); });
+  db.ref(R+'/frame').on('value', s => { const f = s.val(); if (f && f.id === active){ $('fpv').src = f.img; frames++; } });
+}
+
+// Joystick ảo: lên/xuống = tiến/lùi, trái/phải = rẽ
+const joy = {x:0,y:0,u:0}, jel = $('joy'), knob = $('knob');
+function jset(e){
+  const r = jel.getBoundingClientRect(); let dx = e.clientX-(r.left+r.width/2), dy = e.clientY-(r.top+r.height/2);
+  const m = Math.hypot(dx,dy), Rr = r.width/2-35; if (m > Rr){ dx *= Rr/m; dy *= Rr/m; }
+  joy.x = dx/Rr; joy.y = -dy/Rr; knob.style.transform = `translate(${dx}px,${dy}px)`;
+}
+jel.addEventListener('pointerdown', e => { jel.setPointerCapture(e.pointerId); jset(e); });
+jel.addEventListener('pointermove', e => { if (jel.hasPointerCapture(e.pointerId)) jset(e); });
+const jend = () => { joy.x = joy.y = 0; knob.style.transform = ''; };
+jel.addEventListener('pointerup', jend); jel.addEventListener('pointercancel', jend);
+for (const [id,v] of [['aup',1],['adn',-1]]){ const b = $(id); b.addEventListener('pointerdown', () => joy.u = v); b.addEventListener('pointerup', () => joy.u = 0); b.addEventListener('pointerleave', () => joy.u = 0); b.addEventListener('pointercancel', () => joy.u = 0); }
+
+// Nút đi lại (giữ để di chuyển): ▲ tiến, ▼ lùi, ◀ rẽ trái, ▶ rẽ phải
+const dp = {f:0,tr:0}, DM = {f:['f',1],b:['f',-1],l:['tr',1],r:['tr',-1]}, cl = v => Math.max(-1,Math.min(1,v));
+document.querySelectorAll('#dpad button').forEach(b => {
+  const [k,v] = DM[b.dataset.d];
+  const off = () => { if (dp[k] === v) dp[k] = 0; b.classList.remove('on'); };
+  b.addEventListener('pointerdown', e => { e.preventDefault(); dp[k] = v; b.classList.add('on'); });
+  ['pointerup','pointerleave','pointercancel'].forEach(ev => b.addEventListener(ev, off));
+});
+let padMode = 'dpad';
+$('mode').onclick = () => {
+  padMode = padMode === 'dpad' ? 'joy' : 'dpad';
+  $('dpad').style.display = padMode === 'dpad' ? 'grid' : 'none'; $('joy').style.display = padMode === 'joy' ? 'block' : 'none';
+  $('mode').textContent = padMode === 'dpad' ? 'Joystick' : 'Nút'; jend(); dp.f = dp.tr = 0;
+};
+
+let actMsg = null; document.querySelectorAll('#acts button').forEach(b => b.addEventListener('pointerdown', () => { actMsg = {n:b.dataset.a, ts:Date.now()}; }));
+let barkTs = 0; $('bk').addEventListener('pointerdown', () => { barkTs = Date.now(); });
+// Gửi lệnh 20 lần/giây (thế giới ảo tự dừng nếu mất lệnh quá 0,5 giây)
+setInterval(() => {
+  if (!db || !online) return;
+  db.ref(R+'/cmd').set({id:active, f:+cl(joy.y+dp.f).toFixed(2), tr:+cl(dp.tr-joy.x).toFixed(2), u:joy.u, bark:barkTs, act:actMsg, ts:Date.now()});
+}, 50);
+
+setInterval(() => { fps = frames; frames = 0; }, 1000);
+setInterval(() => {
+  const fresh = tel && Date.now()-telAt < 1500 && tel.id === active;
+  const rtt = fresh && tel.ack ? Date.now()-tel.ack : null;
+  $('pv').textContent = VN[active];
+  $('st').textContent = `${online ? '●' : '○'} ${rtt !== null && rtt < 5000 ? rtt+' ms' : '-- ms'} · ${fps} fps`;
+  const lab = active === 'drone' ? 'ALT' : active === 'boat' ? 'DEPTH' : 'ELEV';
+  $('osd').textContent = fresh ? `SPD ${tel.v} m/s\n${lab} ${tel.alt} m\nHDG ${tel.h}°  BAT ${tel.b}%` : 'NO TELEMETRY';
+  if (db) $('msg').textContent = !online ? 'Mất kết nối Firebase…' : (!fresh ? 'Chờ thế giới ảo trên máy tính…' : '');
+}, 250);
+
+try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => {}); } catch (e) {}
+mark();
+</script>
+</body>
+</html>
