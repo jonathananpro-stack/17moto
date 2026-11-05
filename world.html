@@ -1118,9 +1118,15 @@ function step(dt,t){
   { // Thuyền
     const b=V.boat, a=cur==='boat';
     b.v += ((a?f:0)*7 - 1.1*b.v)*dt;
-    b.yaw += (a?tr:0)*1.2*dt*Math.min(1,Math.abs(b.v)/2+.2)*(b.v>=-.1?1:-1);
-    const nx=b.x+Math.sin(b.yaw)*b.v*dt+wx*gust*.05*dt, nz=b.z+Math.cos(b.yaw)*b.v*dt+wz*gust*.05*dt;
-    if (H(nx,nz)>-.6 || Math.abs(nx)>110 || Math.abs(nz)>110) b.v*=-.3; else { b.x=nx; b.z=nz; }
+    b.yaw += (a?tr:0)*1.2*dt*Math.min(1,Math.abs(b.v)/2+.55)*(b.v>=-.1?1:-1);   // quay được cả khi đứng yên
+    // nước đủ sâu thì đi; nếu đang ở chỗ cạn thì vẫn cho đi về phía sâu hơn
+    const h0=H(b.x,b.z), ok=(x,z)=>Math.abs(x)<=110&&Math.abs(z)<=110&&(H(x,z)<=-.6||H(x,z)<h0-.001);
+    const mx=Math.sin(b.yaw)*b.v*dt, mz=Math.cos(b.yaw)*b.v*dt;
+    if (ok(b.x+mx,b.z+mz)){ b.x+=mx; b.z+=mz; }
+    else if (ok(b.x+mx,b.z)){ b.x+=mx; b.v*=.97; }   // chạm bờ thì trượt dọc theo bờ
+    else if (ok(b.x,b.z+mz)){ b.z+=mz; b.v*=.97; }
+    else b.v*=.5;                                    // đâm thẳng vào bờ: dừng lại, lùi hoặc quay đầu là ra
+    const wdx=wx*gust*.05*dt, wdz=wz*gust*.05*dt; if (ok(b.x+wdx,b.z+wdz)){ b.x+=wdx; b.z+=wdz; }   // gió không ép thuyền vào bờ
     const target = WH(b.x,b.z,t)+.05;
     b.vy += (-30*(b.y-target) - 5*b.vy)*dt; b.y += b.vy*dt;
     b.g.position.set(b.x,b.y,b.z);
